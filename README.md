@@ -51,5 +51,4 @@ Books are stored in a JSON file (`books_db.json`) in the same directory as the s
 
 ## Requirements
 
-- Python 3.7 or higher (no third-party dependencies).
-
+- Python 3.7 or higher 
