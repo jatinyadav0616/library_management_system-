@@ -53,22 +53,3 @@ Books are stored in a JSON file (`books_db.json`) in the same directory as the s
 
 - Python 3.7 or higher (no third-party dependencies).
 
-## How To Save and Commit Your Work (GitHub Codespaces)
-
-1. Stage your changes:
-    ```bash
-    git add .
-    ```
-
-2. Commit your changes:
-    ```bash
-    git commit -m "Add/update library management system"
-    ```
-
-3. Push changes to GitHub:
-    ```bash
-    git push
-    ```
-This project is licensed for educational and demonstration purposes.
-
----  
