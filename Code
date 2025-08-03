@@ -1,0 +1,174 @@
+import os
+import json
+from typing import List
+
+class Book:
+    """Represents a book in the library."""
+
+    def __init__(self, isbn: str, title: str, author: str, available: bool = True):
+        self.isbn = isbn
+        self.title = title
+        self.author = author
+        self.available = available
+
+    def to_dict(self) -> dict:
+        """Convert the Book object to a dictionary for file storage."""
+        return {
+            "isbn": self.isbn,
+            "title": self.title,
+            "author": self.author,
+            "available": self.available
+        }
+
+    @staticmethod
+    def from_dict(data: dict):
+        """Create a Book object from a dictionary."""
+        return Book(
+            isbn=data["isbn"],
+            title=data["title"],
+            author=data["author"],
+            available=data.get("available", True)
+        )
+
+class Library:
+    """Represents the library, managing a collection of books."""
+
+    def __init__(self, db_file: str = "books_db.json"):
+        self.db_file = db_file
+        self.books = self._load_books()
+
+    def _load_books(self) -> List[Book]:
+        """Load books from the JSON file."""
+        if not os.path.exists(self.db_file):
+            return []
+        try:
+            with open(self.db_file, "r") as f:
+                return [Book.from_dict(b) for b in json.load(f)]
+        except (json.JSONDecodeError, IOError):
+            return []
+
+    def _save_books(self) -> None:
+        """Save the current list of books to the JSON file."""
+        with open(self.db_file, "w") as f:
+            json.dump([b.to_dict() for b in self.books], f, indent=2)
+
+    def add_book(self, isbn: str, title: str, author: str) -> None:
+        """Add a new book to the library. Raises an exception on duplicate ISBN."""
+        if any(b.isbn == isbn for b in self.books):
+            raise Exception("Book with this ISBN already exists!")
+        self.books.append(Book(isbn, title, author))
+        self._save_books()
+
+    def search_books(self, keyword: str) -> List[Book]:
+        """Search for books by title, author, or ISBN."""
+        keyword_lower = keyword.lower()
+        return [
+            b for b in self.books
+            if keyword_lower in b.title.lower()
+            or keyword_lower in b.author.lower()
+            or keyword == b.isbn
+        ]
+
+    def view_books(self) -> List[Book]:
+        """Return all books in the library."""
+        return self.books
+
+    def issue_book(self, isbn: str) -> None:
+        """Issue a book by ISBN if available."""
+        for b in self.books:
+            if b.isbn == isbn:
+                if not b.available:
+                    raise Exception("Book already issued!")
+                b.available = False
+                self._save_books()
+                return
+        raise Exception("Book not found!")
+
+    def return_book(self, isbn: str) -> None:
+        """Return a book by ISBN."""
+        for b in self.books:
+            if b.isbn == isbn:
+                if b.available:
+                    raise Exception("Book was not issued!")
+                b.available = True
+                self._save_books()
+                return
+        raise Exception("Book not found!")
+
+def display_book_info(book: Book) -> None:
+    """Display information about a book."""
+    status = "Available" if book.available else "Issued"
+    print(f"ISBN: {book.isbn} | Title: {book.title} | Author: {book.author} | Status: {status}")
+
+def main():
+    """Main function to run the Library Management System with menu options."""
+    library = Library()
+    menu = (
+        "\n===== Library Management System =====\n"
+        "1. Add Book\n"
+        "2. Search Book\n"
+        "3. View All Books\n"
+        "4. Issue Book\n"
+        "5. Return Book\n"
+        "6. Exit\n"
+    )
+
+    while True:
+        print(menu)
+        choice = input("Enter your choice (1-6): ").strip()
+        try:
+            if choice == '1':
+                # Add Book
+                isbn = input("Enter ISBN: ").strip()
+                title = input("Enter Title: ").strip()
+                author = input("Enter Author: ").strip()
+                library.add_book(isbn, title, author)
+                print("Book added successfully.\n")
+
+            elif choice == '2':
+                # Search Book
+                keyword = input("Enter title, author, or ISBN to search: ").strip()
+                results = library.search_books(keyword)
+                if not results:
+                    print("No books found matching your search.\n")
+                else:
+                    print("Search Results:")
+                    for book in results:
+                        display_book_info(book)
+                    print("")
+
+            elif choice == '3':
+                # View All Books
+                books = library.view_books()
+                if not books:
+                    print("No books available in the library.\n")
+                else:
+                    print("All Books:")
+                    for book in books:
+                        display_book_info(book)
+                    print("")
+
+            elif choice == '4':
+                # Issue Book
+                isbn = input("Enter ISBN to issue: ").strip()
+                library.issue_book(isbn)
+                print("Book issued successfully.\n")
+
+            elif choice == '5':
+                # Return Book
+                isbn = input("Enter ISBN to return: ").strip()
+                library.return_book(isbn)
+                print("Book returned successfully.\n")
+
+            elif choice == '6':
+                print("Exiting Library Management System. Goodbye!")
+                break
+
+            else:
+                print("Invalid choice. Please select a valid option (1-6).\n")
+
+        except Exception as e:
+            print(f"Error: {e}\n")
+
+if __name__ == "__main__":
+    main()
